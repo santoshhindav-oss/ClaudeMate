@@ -29,8 +29,8 @@ echo Building the Windows installer...
 call npm run dist:win
 if errorlevel 1 goto failed
 echo.
-echo Build complete. Open the release folder to find ClaudeMate-Setup-0.2.1-x64.exe
-if exist "release\ClaudeMate-Setup-0.2.1-x64.exe" start "" "release"
+echo Build complete. Open the release folder to find ClaudeMate-Setup-0.3.0-x64.exe
+if exist "release\ClaudeMate-Setup-0.3.0-x64.exe" start "" "release"
 pause
 exit /b 0
 :failed

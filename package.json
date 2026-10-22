@@ -1,6 +1,6 @@
 {
   "name": "claudemate-desktop",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "A private desktop AI assistant with Claude and searchable conversation memory.",
   "main": "main.cjs",
   "author": "ClaudeMate",
