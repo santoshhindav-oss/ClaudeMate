@@ -44,3 +44,5 @@
 .attempt{display:flex;gap:16px;font-size:11px;color:#5b6157;padding:7px 0;border-bottom:1px solid #f2f2ee}
 .attempt b{margin-left:auto;color:#405b42}
 button:disabled{opacity:.55;cursor:default}
+.rec-dot{font-size:9px;color:#5e7b58}
+.bank-replay{padding:0 18px 6px}

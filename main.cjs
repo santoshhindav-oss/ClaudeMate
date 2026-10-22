@@ -1,4 +1,5 @@
-const { app, BrowserWindow, ipcMain, dialog, safeStorage, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, safeStorage, shell, protocol, net } = require('electron');
+const { pathToFileURL } = require('node:url');
 const path = require('node:path');
 const fs = require('node:fs');
 const AdmZip = require('adm-zip');
@@ -23,7 +24,12 @@ function makeWindow() {
   mainWindow = new BrowserWindow({ width: 1440, height: 920, minWidth: 1040, minHeight: 700, backgroundColor: '#f7f7f5', title: 'ClaudeMate', webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true } });
   if (isDev) mainWindow.loadURL('http://127.0.0.1:5173'); else mainWindow.loadFile(path.join(__dirname, 'dist', 'index.html'));
 }
-app.whenReady().then(() => { ensureData(); makeWindow(); app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) makeWindow(); }); });
+// Recorded answers ship in resources/audio as Q001_….mp3 … Q111_….mp3 and are served to the page as qaudio://answer/<n>.
+const audioDir = () => app.isPackaged ? path.join(process.resourcesPath, 'audio') : path.join(__dirname, 'audio');
+function audioIndex() { const map = {}; try { for (const f of fs.readdirSync(audioDir())) { const m = /^Q(\d{3})_.*\.mp3$/i.exec(f); if (m) map[Number(m[1])] = f; } } catch {} return map; }
+protocol.registerSchemesAsPrivileged([{ scheme: 'qaudio', privileges: { standard: true, secure: true, stream: true, supportFetchAPI: true } }]);
+ipcMain.handle('audio:list', () => Object.keys(audioIndex()).map(Number));
+app.whenReady().then(() => { protocol.handle('qaudio', req => { const n = Number(new URL(req.url).pathname.replace(/\D/g, '')); const f = audioIndex()[n]; return f ? net.fetch(pathToFileURL(path.join(audioDir(), f)).toString()) : new Response('Not found', { status: 404 }); }); ensureData(); makeWindow(); app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) makeWindow(); }); });
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
 
 ipcMain.handle('app:info', () => ({ version: app.getVersion(), dataDirectory: dataDir(), secureStorageAvailable: safeStorage.isEncryptionAvailable() }));

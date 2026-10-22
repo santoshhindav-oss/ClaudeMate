@@ -76,6 +76,12 @@ export function BankPage({ prep, onPractice, notify }) {
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(null);
   const { speak, stop, speaking } = useSpeech();
+  const [recorded, setRecorded] = useState(new Set());
+  const [playing, setPlaying] = useState(null);
+  const audioRef = useRef(null);
+  useEffect(() => { window.claudemate.audioList().then(list => setRecorded(new Set(list))).catch(() => {}); return () => audioRef.current?.pause(); }, []);
+  const stopAll = () => { stop(); audioRef.current?.pause(); setPlaying(null); };
+  const play = (n) => { stopAll(); const a = new Audio(`qaudio://answer/${n}`); a.onended = a.onerror = () => setPlaying(null); audioRef.current = a; a.play().then(() => setPlaying(n)).catch(() => notify('error', 'Could not play this recording.')); };
   const items = useMemo(() => {
     const mine = prep.generated.map(x => ({ ...x, key: `g-${x.id}`, topic: 'Generated for you', mine: true }));
     const bank = BANK.map(x => ({ ...x, key: `b-${x.n}`, topic: `Q${x.n} · ${x.topic}` }));
@@ -92,12 +98,14 @@ export function BankPage({ prep, onPractice, notify }) {
     <div className="panel bank-list">
       {!items.length && <div className="empty-state"><h3>No questions here yet</h3><p>{cat === 'Coding' || cat === 'Mine' ? 'Use Generate questions to create tailored ones from your resume and job description.' : 'Try another search.'}</p></div>}
       {items.slice(0, 300).map(x => <div className={`bank-item ${open === x.key ? 'open' : ''}`} key={x.key}>
-        <button className="bank-q" onClick={() => { stop(); setOpen(open === x.key ? null : x.key); }}><span className={`cat-tag ${x.category}`}>{x.category}</span><span className="bank-q-text">{x.q}</span><span className="bank-topic">{x.topic}</span></button>
+        <button className="bank-q" onClick={() => { stopAll(); if (open === x.key) setOpen(null); else { setOpen(x.key); speak(x.q); } }}><span className={`cat-tag ${x.category}`}>{x.category}</span><span className="bank-q-text">{x.q}</span>{x.n && recorded.has(x.n) && <span className="rec-dot" title="Recorded answer available">▶</span>}<span className="bank-topic">{x.topic}</span></button>
+        {open === x.key && <div className="bank-replay"><button className="text-button" onClick={() => { stopAll(); speak(x.q); }}>🔊 Hear question again</button></div>}
         {open === x.key && <div className="bank-a">
           {x.why && <p className="bank-why">Why they ask: {x.why}</p>}
           <div className="answer-text">{x.a || 'No model answer yet.'}</div>
           <div className="bank-actions">
-            <button className="secondary-button" onClick={() => speaking ? stop() : speak(x.a)}>{speaking ? 'Stop reading' : 'Read answer aloud'}</button>
+            {x.n && recorded.has(x.n) && <button className="primary-button" onClick={() => playing === x.n ? stopAll() : play(x.n)}>{playing === x.n ? '■ Stop recording' : '▶ Play recorded answer'}</button>}
+            <button className="secondary-button" onClick={() => speaking ? stop() : (stopAll(), speak(x.a))}>{speaking ? 'Stop reading' : 'Read answer aloud'}</button>
             <button className="primary-button" onClick={() => onPractice(x)}>Practise this question</button>
             {x.mine && <button className="subtle-button" onClick={() => remove(x.id)}>Delete</button>}
           </div>
@@ -167,7 +175,7 @@ export function MockPage({ prep, setPrep, notify, keyConfigured, goSettings, see
 
   const pool = () => {
     const mine = prep.generated.map(x => ({ q: x.q, a: x.a, category: x.category }));
-    const bank = BANK.map(x => ({ q: x.q, a: x.a, category: x.category }));
+    const bank = BANK.map(x => ({ n: x.n, q: x.q, a: x.a, category: x.category }));
     const src = setup.source === 'mine' ? mine : setup.source === 'both' ? [...mine, ...bank] : bank;
     return src.filter(x => setup.category === 'All' || x.category === setup.category);
   };
@@ -244,6 +252,7 @@ export function MockPage({ prep, setPrep, notify, keyConfigured, goSettings, see
         <div className="prep-two"><div><div className="field-label">WHAT WORKED</div><ul>{(result.strengths || []).map((x, i) => <li key={i}>{x}</li>)}</ul></div><div><div className="field-label">TO IMPROVE</div><ul>{(result.improve || []).map((x, i) => <li key={i}>{x}</li>)}</ul></div></div>
         <div className="field-label">STRONGER VERSION</div><div className="answer-text">{result.better}</div>
         {current.a && <details><summary className="field-label">YOUR PREPARED ANSWER</summary><div className="answer-text">{current.a}</div></details>}
+        {current.n && <div className="bank-actions"><span className="field-label">YOUR RECORDED ANSWER</span><audio controls preload="none" src={`qaudio://answer/${current.n}`}/></div>}
         {audioUrl && <div className="bank-actions"><span className="field-label">YOUR RECORDING</span><audio controls src={audioUrl}/></div>}
         <div className="bank-actions"><button className="secondary-button" onClick={() => speak(result.better)}>Read stronger version aloud</button><span className="spacer"/>
           {last ? <button className="primary-button" onClick={finish}>Finish session</button> : <button className="primary-button" onClick={() => setSession(s => ({ ...s, index: s.index + 1 }))}>Next question</button>}</div>

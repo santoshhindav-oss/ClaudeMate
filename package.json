@@ -63,6 +63,15 @@
       "createStartMenuShortcut": true,
       "shortcutName": "ClaudeMate"
     },
-    "publish": null
+    "publish": null,
+    "extraResources": [
+      {
+        "from": "audio",
+        "to": "audio",
+        "filter": [
+          "*.mp3"
+        ]
+      }
+    ]
   }
 }
