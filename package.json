@@ -62,6 +62,7 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "ClaudeMate"
-    }
+    },
+    "publish": null
   }
 }
