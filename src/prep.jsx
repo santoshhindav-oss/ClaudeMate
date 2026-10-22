@@ -3,8 +3,8 @@ import BANK from './bank.json';
 import './prep.css';
 
 export const CATEGORIES = ['Technical', 'HR', 'Delivery', 'Coding'];
-const STYLE = 'Answer style: open with a one-sentence headline answer, then 3-4 concrete points drawn from the candidate\'s real experience, then a one-line close. Spoken English, flowing sentences, no bullet symbols, 120-200 words. Use only facts from the resume and past-conversation excerpts; prefer the candidate\'s own stories and wording from those excerpts; where a figure or name is unknown, leave a gap like [fill in: team size] rather than inventing it.';
-const CODING_STYLE = 'For coding questions: give the approach in two or three sentences, then clean code in the language the job description favours (default Python), then time and space complexity, then one follow-up the interviewer may ask.';
+const STYLE = 'Answer style: write exactly how a confident person talks out loud in an interview, in simple everyday English. Use short sentences of about 8 to 15 words. Use common words, not formal or fancy ones: say "use" not "leverage", "set up" not "establish", "help" not "facilitate", "make sure" not "ensure". No jargon unless the job description uses it, and no long words strung together. Speak in first person ("I", "we", "my team"). Start with one short sentence that answers the question directly. Then give 3 or 4 simple points, each a real example from the candidate\'s experience, using phrases like "First,", "Second,", "For example,". End with one short closing line. No bullet symbols, 120-180 words. Use only facts from the resume and past-conversation excerpts; prefer the candidate\'s own stories and wording from those excerpts; where a figure or name is unknown, leave a gap like [fill in: team size] rather than inventing it.';
+const CODING_STYLE = 'For coding questions: explain the approach in two or three short, simple sentences, the way you would say it out loud to the interviewer. Then give clean code in the language the job description favours (default Python). Then say the time and space complexity in one plain sentence, and one follow-up the interviewer may ask.';
 
 export function parseJson(text, fallback) {
   const t = String(text || '');
@@ -207,7 +207,7 @@ export function MockPage({ prep, setPrep, notify, keyConfigured, goSettings, see
     stop(); if (recording) recRef.current?.stop();
     setBusy(true);
     try {
-      const system = `You are a demanding but fair interview coach reviewing a practice answer after a mock interview. Score each dimension 1-5: ${DIMENSIONS.map(d => d[0]).join(', ')}. Return ONLY JSON: {"scores":{${DIMENSIONS.map(d => `"${d[0]}":n`).join(',')}},"overall":n,"strengths":["..."],"improve":["..."],"better":"a stronger version of the candidate's own answer, keeping their facts. ${current.category === 'Coding' ? CODING_STYLE : STYLE}"}`;
+      const system = `You are a demanding but fair interview coach reviewing a practice answer after a mock interview. Write all feedback in short, simple, plain English. Reward answers that sound natural when spoken and mark down long, formal or jargon-heavy sentences. Score each dimension 1-5: ${DIMENSIONS.map(d => d[0]).join(', ')}. Return ONLY JSON: {"scores":{${DIMENSIONS.map(d => `"${d[0]}":n`).join(',')}},"overall":n,"strengths":["..."],"improve":["..."],"better":"a stronger version of the candidate's own answer, keeping their facts. ${current.category === 'Coding' ? CODING_STYLE : STYLE}"}`;
       const history = await historyBlock(current.q);
       const prompt = `${profileBlock(prep)}${history}\n\nQUESTION: ${current.q}\n\n${current.a ? `REFERENCE ANSWER THE CANDIDATE PREPARED:\n${current.a}\n\n` : ''}CANDIDATE'S ANSWER (spoken, ${seconds} seconds):\n${answer}`;
       const r = await window.claudemate.complete({ system, prompt, maxTokens: 2500 });
