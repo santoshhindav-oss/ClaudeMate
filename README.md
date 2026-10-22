@@ -4,6 +4,8 @@ ClaudeMate is an independent desktop AI assistant built to replace the parts of 
 
 ## Included
 
+- **Interview Prep** (v0.2): resume and job description profile; a 111-question bank with model answers and read-aloud; Claude-generated Technical, HR, Delivery and Coding questions with tailored answers drawn from your resume and imported Claude history; mock interviews where questions are read aloud, you answer (Windows + H dictates), optionally record yourself, and Claude scores five dimensions with a stronger version of your answer.
+
 - Anthropic Claude Messages API integration.
 - API key saved with Electron `safeStorage` (OS-backed encryption; refuses to save if encryption is unavailable).
 - Claude model selector and connection test.
@@ -20,7 +22,7 @@ ClaudeMate is an independent desktop AI assistant built to replace the parts of 
 1. Install Node.js 20 or newer from <https://nodejs.org/>.
 2. Extract this folder to a normal writable location.
 3. Double-click `BUILD-WINDOWS.bat`.
-4. Wait for dependency downloads and packaging to finish. The installer should appear in `release/` as `ClaudeMate-Setup-0.1.0-x64.exe`.
+4. Wait for dependency downloads and packaging to finish. The installer should appear in `release/` as `ClaudeMate-Setup-0.2.0-x64.exe`.
 
 Or use a GitHub Actions Windows runner: push this folder to a GitHub repository, open **Actions → Build ClaudeMate Windows installer → Run workflow**, then download the `ClaudeMate-Windows-Installer` artifact from the completed run. The workflow is in `.github/workflows/build-windows.yml`.
 
