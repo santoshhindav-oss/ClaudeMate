@@ -72,9 +72,9 @@ export function ProfilePage({ prep, setPrep, notify }) {
 }
 
 export function BankPage({ prep, onPractice, notify }) {
-  const [cat, setCat] = useState('All');
   const [q, setQ] = useState('');
-  const [open, setOpen] = useState(null);
+  const [selected, setSelected] = useState('b-1');
+  const [expanded, setExpanded] = useState(() => new Set([BANK[0]?.topic]));
   const { speak, stop, speaking } = useSpeech();
   const [recorded, setRecorded] = useState(new Set());
   const [playing, setPlaying] = useState(null);
@@ -82,35 +82,55 @@ export function BankPage({ prep, onPractice, notify }) {
   useEffect(() => { window.claudemate.audioList().then(list => setRecorded(new Set(list))).catch(() => {}); return () => audioRef.current?.pause(); }, []);
   const stopAll = () => { stop(); audioRef.current?.pause(); setPlaying(null); };
   const play = (n) => { stopAll(); const a = new Audio(`qaudio://answer/${n}`); a.onended = a.onerror = () => setPlaying(null); audioRef.current = a; a.play().then(() => setPlaying(n)).catch(() => notify('error', 'Could not play this recording.')); };
-  const items = useMemo(() => {
-    const mine = prep.generated.map(x => ({ ...x, key: `g-${x.id}`, topic: 'Generated for you', mine: true }));
-    const bank = BANK.map(x => ({ ...x, key: `b-${x.n}`, topic: `Q${x.n} · ${x.topic}` }));
-    const all = [...mine, ...bank];
+  // Categories in document order, each with its questions; generated questions get their own group at the end.
+  const groups = useMemo(() => {
     const term = q.toLowerCase().trim();
-    return all.filter(x => (cat === 'All' || (cat === 'Mine' ? x.mine : x.category === cat)) && (!term || `${x.q} ${x.a}`.toLowerCase().includes(term)));
-  }, [prep.generated, cat, q]);
+    const match = x => !term || `${x.q} ${x.a}`.toLowerCase().includes(term);
+    const map = new Map();
+    for (const x of BANK) { if (!match(x)) continue; if (!map.has(x.topic)) map.set(x.topic, []); map.get(x.topic).push({ ...x, key: `b-${x.n}`, label: `Q${x.n}` }); }
+    const mine = prep.generated.filter(match).map((x, i) => ({ ...x, key: `g-${x.id}`, label: `G${i + 1}`, mine: true }));
+    if (mine.length) map.set('Generated for you', mine);
+    return [...map.entries()];
+  }, [prep.generated, q]);
+  const all = useMemo(() => groups.flatMap(([, xs]) => xs), [groups]);
+  const current = all.find(x => x.key === selected) || null;
+  const pick = (x) => { stopAll(); setSelected(x.key); speak(x.q); };
+  const toggle = (t) => setExpanded(e => { const n = new Set(e); n.has(t) ? n.delete(t) : n.add(t); return n; });
   const remove = async (id) => { if (!window.confirm('Delete this generated question?')) return; try { await window.claudemate.deleteGenerated(id); notify('success', 'Deleted.'); onPractice(null, true); } catch (e) { notify('error', e.message); } };
-  return <section className="content-page">
-    <Title eyebrow="INTERVIEW PREP" title="Question bank" text={`${BANK.length} prepared questions with your model answers, plus ${prep.generated.length} generated for your profile.`}>
-      <div className="search-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input value={q} onChange={e => setQ(e.target.value)} placeholder="Search questions and answers…"/></div>
-    </Title>
-    <Chips value={cat} onChange={setCat} options={['All', 'Mine', ...CATEGORIES]}/>
-    <div className="panel bank-list">
-      {!items.length && <div className="empty-state"><h3>No questions here yet</h3><p>{cat === 'Coding' || cat === 'Mine' ? 'Use Generate questions to create tailored ones from your resume and job description.' : 'Try another search.'}</p></div>}
-      {items.slice(0, 300).map(x => <div className={`bank-item ${open === x.key ? 'open' : ''}`} key={x.key}>
-        <button className="bank-q" onClick={() => { stopAll(); if (open === x.key) setOpen(null); else { setOpen(x.key); speak(x.q); } }}><span className={`cat-tag ${x.category}`}>{x.category}</span><span className="bank-q-text">{x.q}</span>{x.n && recorded.has(x.n) && <span className="rec-dot" title="Recorded answer available">▶</span>}<span className="bank-topic">{x.topic}</span></button>
-        {open === x.key && <div className="bank-replay"><button className="text-button" onClick={() => { stopAll(); speak(x.q); }}>🔊 Hear question again</button></div>}
-        {open === x.key && <div className="bank-a">
-          {x.why && <p className="bank-why">Why they ask: {x.why}</p>}
-          <div className="answer-text">{x.a || 'No model answer yet.'}</div>
-          <div className="bank-actions">
-            {x.n && recorded.has(x.n) && <button className="primary-button" onClick={() => playing === x.n ? stopAll() : play(x.n)}>{playing === x.n ? '■ Stop recording' : '▶ Play recorded answer'}</button>}
-            <button className="secondary-button" onClick={() => speaking ? stop() : (stopAll(), speak(x.a))}>{speaking ? 'Stop reading' : 'Read answer aloud'}</button>
-            <button className="primary-button" onClick={() => onPractice(x)}>Practise this question</button>
-            {x.mine && <button className="subtle-button" onClick={() => remove(x.id)}>Delete</button>}
-          </div>
-        </div>}
-      </div>)}
+  return <section className="bank-page">
+    <aside className="bank-tree">
+      <div className="bank-tree-head"><strong>Question bank</strong><span>{BANK.length + prep.generated.length} questions</span>
+        <div className="search-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input value={q} onChange={e => setQ(e.target.value)} placeholder="Search questions and answers…"/></div></div>
+      <div className="bank-tree-body">
+        {!groups.length && <p className="field-help">No questions match your search.</p>}
+        {groups.map(([topic, xs]) => { const isOpen = q.trim() || expanded.has(topic); return <div className="tree-group" key={topic}>
+          <button className={`tree-cat ${isOpen ? 'open' : ''}`} onClick={() => toggle(topic)}><span className="tree-caret">{isOpen ? '▾' : '▸'}</span><span className="tree-cat-name">{topic}</span><span className="tree-count">{xs.length}</span></button>
+          {isOpen && xs.map(x => <button key={x.key} className={`tree-q ${selected === x.key ? 'on' : ''}`} onClick={() => pick(x)}><span className="tree-num">{x.label}</span><span className="tree-q-text">{x.q}</span>{x.n && recorded.has(x.n) && <span className="rec-dot" title="Recorded answer available">▶</span>}</button>)}
+        </div>; })}
+      </div>
+    </aside>
+    <div className="bank-detail">
+      {!current && <div className="empty-state"><h3>Pick a question</h3><p>Choose a category on the left, then click a question. It will be read out to you.</p></div>}
+      {current && <>
+        <div className="eyebrow"><span className="eyebrow-line"/> {current.label} · {current.mine ? 'GENERATED FOR YOU' : current.topic.toUpperCase()}</div>
+        <h1 className="bank-detail-q">{current.q}</h1>
+        <div className="bank-actions">
+          <button className="text-button" onClick={() => { stopAll(); speak(current.q); }}>🔊 Hear question again</button>
+          <span className={`cat-tag ${current.category}`}>{current.category}</span>
+        </div>
+        {current.why && <p className="bank-why">Why they ask: {current.why}</p>}
+        <div className="answer-text">{current.a || 'No model answer yet.'}</div>
+        <div className="bank-actions">
+          {current.n && recorded.has(current.n) && <button className="primary-button" onClick={() => playing === current.n ? stopAll() : play(current.n)}>{playing === current.n ? '■ Stop recording' : '▶ Play recorded answer'}</button>}
+          <button className="secondary-button" onClick={() => speaking ? stop() : (stopAll(), speak(current.a))}>{speaking ? 'Stop reading' : 'Read answer aloud'}</button>
+          <button className="secondary-button" onClick={() => onPractice(current)}>Practise this question</button>
+          {current.mine && <button className="subtle-button" onClick={() => remove(current.id)}>Delete</button>}
+          <span className="spacer"/>
+          {(() => { const i = all.findIndex(x => x.key === current.key); return <>
+            <button className="subtle-button" disabled={i <= 0} onClick={() => pick(all[i - 1])}>← Previous</button>
+            <button className="subtle-button" disabled={i >= all.length - 1} onClick={() => { const nx = all[i + 1]; setExpanded(e => new Set(e).add(nx.mine ? 'Generated for you' : nx.topic)); pick(nx); }}>Next →</button></>; })()}
+        </div>
+      </>}
     </div>
   </section>;
 }

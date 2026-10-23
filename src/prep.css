@@ -46,3 +46,30 @@
 button:disabled{opacity:.55;cursor:default}
 .rec-dot{font-size:9px;color:#5e7b58}
 .bank-replay{padding:0 18px 6px}
+.bank-page{flex:1;display:flex;min-height:0;overflow:hidden}
+.bank-tree{width:360px;flex-shrink:0;border-right:1px solid #e7e8e2;background:#fbfbf9;display:flex;flex-direction:column;min-height:0}
+.bank-tree-head{padding:18px 16px 12px;display:flex;flex-direction:column;gap:4px;border-bottom:1px solid #eeeee9}
+.bank-tree-head strong{font:700 15px 'Manrope',sans-serif}
+.bank-tree-head span{font-size:10px;color:#8b9087;margin-bottom:6px}
+.bank-tree-head .search-field{width:100%;background:#fff}
+.bank-tree-body{overflow-y:auto;flex:1;padding:8px 8px 24px}
+.tree-cat{width:100%;display:flex;align-items:center;gap:7px;border:0;background:transparent;padding:9px 8px;border-radius:7px;text-align:left;font-size:11.5px;font-weight:700;color:#2f332d}
+.tree-cat:hover{background:#f0f2ec}
+.tree-cat.open{color:#405b42}
+.tree-caret{width:10px;color:#8b9087}
+.tree-cat-name{flex:1}
+.tree-count{font-size:9px;font-weight:600;color:#8b9087;background:#eef0ea;border-radius:9px;padding:2px 7px}
+.tree-q{width:100%;display:flex;align-items:flex-start;gap:8px;border:0;background:transparent;padding:7px 8px 7px 25px;border-radius:7px;text-align:left;font-size:11px;line-height:1.45;color:#4a4f46}
+.tree-q:hover{background:#f0f2ec}
+.tree-q.on{background:#e3ebdf;color:#20221f;font-weight:600}
+.tree-num{font-size:9px;font-weight:700;color:#8b9087;min-width:30px;padding-top:2px}
+.tree-q-text{flex:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.bank-detail{flex:1;overflow-y:auto;padding:30px 40px 40px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.bank-detail-q{font:700 22px/1.4 'Manrope',sans-serif;letter-spacing:-.4px;margin:0;color:#20221f}
+.bank-detail .answer-text{font-size:13.5px;line-height:1.8}
+.bank-page{flex:none;height:calc(100vh - 113px)}
+.sidebar.slim{width:62px;padding:25px 8px 18px}
+.sidebar.slim .brand{padding:0 3px 22px}
+.sidebar.slim .brand>div:not(.brand-mark),.sidebar.slim .nav-label,.sidebar.slim .nav-item span,.sidebar.slim .sidebar-bottom{display:none}
+.sidebar.slim .new-chat{width:44px;padding:0;justify-content:center;font-size:0;gap:0;margin:0 0 20px}
+.sidebar.slim .nav-item{justify-content:center;padding:11px 0}

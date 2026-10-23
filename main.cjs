@@ -26,7 +26,7 @@ function makeWindow() {
 }
 // Recorded answers ship in resources/audio as Q001_….mp3 … Q111_….mp3 and are served to the page as qaudio://answer/<n>.
 const audioDir = () => app.isPackaged ? path.join(process.resourcesPath, 'audio') : path.join(__dirname, 'audio');
-function audioIndex() { const map = {}; try { for (const f of fs.readdirSync(audioDir())) { const m = /^Q(\d{3})_.*\.mp3$/i.exec(f); if (m) map[Number(m[1])] = f; } } catch {} return map; }
+function audioIndex() { const map = {}; try { for (const f of fs.readdirSync(audioDir())) { const m = /^Q(\d{3})(_.*)?\.mp3$/i.exec(f); if (m) map[Number(m[1])] = f; } } catch {} return map; }
 protocol.registerSchemesAsPrivileged([{ scheme: 'qaudio', privileges: { standard: true, secure: true, stream: true, supportFetchAPI: true } }]);
 ipcMain.handle('audio:list', () => Object.keys(audioIndex()).map(Number));
 app.whenReady().then(() => { protocol.handle('qaudio', req => { const n = Number(new URL(req.url).pathname.replace(/\D/g, '')); const f = audioIndex()[n]; return f ? net.fetch(pathToFileURL(path.join(audioDir(), f)).toString()) : new Response('Not found', { status: 404 }); }); ensureData(); makeWindow(); app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) makeWindow(); }); });

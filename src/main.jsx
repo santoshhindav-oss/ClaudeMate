@@ -94,19 +94,19 @@ function App() {
   const clearHistory = async () => { if (!window.confirm('Permanently delete all imported conversation history stored by ClaudeMate? This cannot be undone.')) return; await window.claudemate.deleteAllHistory(); await refresh(); notify('success', 'Imported history deleted from this device.'); };
 
   return <div className="app-shell">
-    <aside className="sidebar">
+    <aside className={`sidebar ${page === 'bank' ? 'slim' : ''}`}>
       <div className="brand"><div className="brand-mark"><Icon name="spark"/></div><div><div className="brand-name">ClaudeMate</div><div className="brand-sub">PERSONAL AI WORKSPACE</div></div></div>
       <button className="new-chat" onClick={newChat}><Icon name="plus"/> New conversation</button>
       <div className="nav-label">WORKSPACE</div>
-      <button className={`nav-item ${page === 'chat' ? 'active' : ''}`} onClick={() => setPage('chat')}><Icon name="chat"/><span>Ask Claude</span></button>
-      <button className={`nav-item ${page === 'history' ? 'active' : ''}`} onClick={() => setPage('history')}><Icon name="history"/><span>Conversation memory</span><span className="nav-count">{count.total}</span></button>
+      <button className={`nav-item ${page === 'chat' ? 'active' : ''}`} onClick={() => setPage('chat')} title="Ask Claude"><Icon name="chat"/><span>Ask Claude</span></button>
+      <button className={`nav-item ${page === 'history' ? 'active' : ''}`} onClick={() => setPage('history')} title="Conversation memory"><Icon name="history"/><span>Conversation memory</span><span className="nav-count">{count.total}</span></button>
       <div className="nav-label">INTERVIEW PREP</div>
-      <button className={`nav-item ${page === 'mock' ? 'active' : ''}`} onClick={() => setPage('mock')}><Icon name="chat"/><span>Mock interview</span></button>
-      <button className={`nav-item ${page === 'generate' ? 'active' : ''}`} onClick={() => setPage('generate')}><Icon name="spark"/><span>Generate questions</span></button>
-      <button className={`nav-item ${page === 'bank' ? 'active' : ''}`} onClick={() => setPage('bank')}><Icon name="book"/><span>Question bank</span><span className="nav-count">{111 + prep.generated.length}</span></button>
-      <button className={`nav-item ${page === 'profile' ? 'active' : ''}`} onClick={() => setPage('profile')}><Icon name="upload"/><span>Resume & JD</span></button>
+      <button className={`nav-item ${page === 'mock' ? 'active' : ''}`} onClick={() => setPage('mock')} title="Mock interview"><Icon name="chat"/><span>Mock interview</span></button>
+      <button className={`nav-item ${page === 'generate' ? 'active' : ''}`} onClick={() => setPage('generate')} title="Generate questions"><Icon name="spark"/><span>Generate questions</span></button>
+      <button className={`nav-item ${page === 'bank' ? 'active' : ''}`} onClick={() => setPage('bank')} title="Question bank"><Icon name="book"/><span>Question bank</span><span className="nav-count">{111 + prep.generated.length}</span></button>
+      <button className={`nav-item ${page === 'profile' ? 'active' : ''}`} onClick={() => setPage('profile')} title="Resume & JD"><Icon name="upload"/><span>Resume & JD</span></button>
       <div className="nav-label">APP</div>
-      <button className={`nav-item ${page === 'settings' ? 'active' : ''}`} onClick={() => setPage('settings')}><Icon name="settings"/><span>Settings</span></button>
+      <button className={`nav-item ${page === 'settings' ? 'active' : ''}`} onClick={() => setPage('settings')} title="Settings"><Icon name="settings"/><span>Settings</span></button>
       <div className="sidebar-bottom">
         <div className="memory-card"><div className="memory-icon"><Icon name="shield"/></div><div><strong>Your history stays local</strong><p>Imported conversations are stored on this device and only relevant excerpts are sent with your question.</p></div></div>
         <div className="profile-row"><div className="avatar">CM</div><div className="profile-text"><strong>Personal workspace</strong><span>{keyConfigured ? 'Claude API configured' : 'Setup required'}</span></div><span className={`status-dot ${keyConfigured ? 'on' : ''}`}/></div>
