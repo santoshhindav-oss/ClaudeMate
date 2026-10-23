@@ -314,7 +314,7 @@ export function InstantPage({ prep, setPrep, notify, keyConfigured, goSettings }
     try {
       const refs = closestBank(q);
       const history = await historyBlock(q);
-      const system = `You are the candidate's interview coach. Write the answer the candidate should give to this interview question, in their own voice (first person). ${STYLE} Base it on their prepared answers below when relevant, reusing their real stories and numbers; do not invent facts.`;
+      const system = `You are the candidate's interview coach. Write the answer the candidate should give to this interview question, in their own voice (first person). Answer from a Delivery Manager's point of view: even for technical or AI questions, show clear understanding in plain words, then focus on how they would deliver it, meaning the decisions and trade-offs, risks, team, client, governance and measurable business outcomes, not deep engineering detail. ${STYLE} Base it on their prepared answers below when relevant, reusing their real stories and numbers; do not invent facts.`;
       const prompt = `${profileBlock(prep)}${history}\n\nCLOSEST PREPARED ANSWERS:\n${refs.map(x => `Q${x.n}. ${x.q}\n${x.a}`).join('\n\n') || '(none)'}\n\nQUESTION: ${q}\n\nReply with the answer only.`;
       const r = await window.claudemate.complete({ system, prompt, maxTokens: 1500 });
       setResult({ q, a: r.text.trim(), refs, saved: false });
