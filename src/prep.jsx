@@ -293,3 +293,49 @@ export function MockPage({ prep, setPrep, notify, keyConfigured, goSettings, see
       {prep.attempts.slice(0, 15).map(a => <div className="attempt" key={a.id}><span>{new Date(a.at).toLocaleString()}</span><span>{a.count} question{a.count > 1 ? 's' : ''}</span><b>{a.average}/5</b></div>)}</div>}
   </section>;
 }
+
+// Closest prepared answers by simple word overlap, so Claude can reuse the candidate's own stories.
+function closestBank(question, k = 3) {
+  const words = s => new Set(String(s).toLowerCase().match(/[a-z0-9]{4,}/g) || []);
+  const qw = words(question);
+  return BANK.map(x => { const w = words(x.q); let hit = 0; for (const t of qw) if (w.has(t)) hit++; return { x, score: hit / Math.sqrt(w.size + 1) }; })
+    .filter(r => r.score > 0).sort((a, b) => b.score - a.score).slice(0, k).map(r => r.x);
+}
+
+export function InstantPage({ prep, setPrep, notify, keyConfigured, goSettings }) {
+  const [question, setQuestion] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState(null);
+  const { speak, stop, speaking } = useSpeech();
+  const ask = async () => {
+    const q = question.trim(); if (!q || busy) return;
+    if (!keyConfigured) { notify('error', 'Add your Anthropic API key in Settings first.'); goSettings(); return; }
+    stop(); setBusy(true); setResult(null);
+    try {
+      const refs = closestBank(q);
+      const history = await historyBlock(q);
+      const system = `You are the candidate's interview coach. Write the answer the candidate should give to this interview question, in their own voice (first person). ${STYLE} Base it on their prepared answers below when relevant, reusing their real stories and numbers; do not invent facts.`;
+      const prompt = `${profileBlock(prep)}${history}\n\nCLOSEST PREPARED ANSWERS:\n${refs.map(x => `Q${x.n}. ${x.q}\n${x.a}`).join('\n\n') || '(none)'}\n\nQUESTION: ${q}\n\nReply with the answer only.`;
+      const r = await window.claudemate.complete({ system, prompt, maxTokens: 1500 });
+      setResult({ q, a: r.text.trim(), refs, saved: false });
+    } catch (e) { notify('error', e.message || 'Claude request failed.'); }
+    finally { setBusy(false); }
+  };
+  const save = async () => { try { setPrep(await window.claudemate.addGenerated([{ q: result.q, a: result.a, category: 'Delivery' }])); setResult(r => ({ ...r, saved: true })); notify('success', 'Saved to your question bank under Generated for you.'); } catch (e) { notify('error', e.message); } };
+  return <section className="content-page">
+    <Title eyebrow="INTERVIEW PREP" title="Instant answer" text="Type any interview question. Claude answers in your style, using your closest prepared answers, resume and history."/>
+    <div className="panel prep-panel">
+      <textarea className="prep-text" rows={3} value={question} onChange={e => setQuestion(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(); } }} placeholder="e.g. How would you handle a client who keeps changing scope? (Enter to ask)"/>
+      <div className="bank-actions"><span className="field-help" style={{ margin: 0 }}>Uses your Anthropic API key from Settings.</span><span className="spacer"/><button className="primary-button" disabled={busy || !question.trim()} onClick={ask}>{busy ? 'Thinking…' : 'Get answer'}</button></div>
+    </div>
+    {result && <div className="panel prep-panel">
+      <h2 className="bank-detail-q" style={{ fontSize: 17 }}>{result.q}</h2>
+      <div className="answer-text">{result.a}</div>
+      <div className="bank-actions">
+        <button className="secondary-button" onClick={() => speaking ? stop() : speak(result.a)}>{speaking ? 'Stop reading' : 'Read answer aloud'}</button>
+        <button className="secondary-button" disabled={result.saved} onClick={save}>{result.saved ? 'Saved' : 'Save to question bank'}</button>
+      </div>
+      {result.refs.length > 0 && <p className="field-help">Based on your prepared answers: {result.refs.map(x => `Q${x.n}`).join(', ')}</p>}
+    </div>}
+  </section>;
+}
